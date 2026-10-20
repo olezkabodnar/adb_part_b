@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline-first Movies</title>
+  <style>
+    body { max-width: 900px; margin: 2rem auto; padding: 0 1rem; font: 16px/1.5 system-ui, sans-serif; color: #222; }
+    form, .panel { margin: 1rem 0; padding: 1rem; border: 1px solid #ccc; border-radius: 6px; }
+    label { display: block; margin: .6rem 0; }
+    input { box-sizing: border-box; max-width: 100%; padding: .4rem; }
+    input[type="text"] { width: 30rem; }
+    button { margin: .2rem; padding: .4rem .7rem; cursor: pointer; }
+    .movie { padding: .8rem 0; border-bottom: 1px solid #ddd; }
+    .muted { color: #555; }
+    #error { color: #8b0000; white-space: pre-wrap; }
+    #log { max-height: 12rem; overflow: auto; padding-left: 1.5rem; }
+    #conflictVersions article { padding: .6rem; margin: .5rem 0; border: 1px solid #ddd; }
+    .status { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Offline-first Movies</h1>
+
+  <section class="panel" aria-label="Connection and synchronisation status">
+    <p>Browser: <span id="onlineStatus" class="status">Checking...</span></p>
+    <p>Sync: <span id="syncStatus" class="status">Starting…</span></p>
+  </section>
+
+  <p id="error" role="alert" hidden></p>
+
+  <form id="movieForm">
+    <h2 id="formHeading">Add a movie</h2>
+    <label>Title
+      <input id="title" type="text" required maxlength="300">
+    </label>
+    <label>Actors (comma separated)
+      <input id="actors" type="text" placeholder="Actor One, Actor Two">
+    </label>
+    <label>Genres (comma separated)
+      <input id="genres" type="text" placeholder="Drama, Comedy">
+    </label>
+    <button id="saveButton" type="submit">Add movie</button>
+    <button id="cancelEditButton" type="button" hidden>Cancel edit</button>
+  </form>
+
+  <section>
+    <h2>Movies</h2>
+    <label>Search by title
+      <input id="search" type="search" placeholder="Search titles">
+    </label>
+    <p id="resultCount" class="muted"></p>
+    <div id="movieList" aria-live="polite"></div>
+  </section>
+
+  <section id="conflictPanel" class="panel" hidden>
+    <h2>Conflict versions</h2>
+    <p>Choose the version to keep. The other revisions will be deleted.</p>
+    <div id="conflictVersions"></div>
+    <button id="closeConflictButton" type="button">Close</button>
+  </section>
+
+  <section class="panel">
+    <h2>Activity log</h2>
+    <ol id="log" aria-live="polite"></ol>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@9.0.0/dist/pouchdb.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
