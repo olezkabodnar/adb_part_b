@@ -8,6 +8,9 @@ const remoteDB = new PouchDB("http://127.0.0.1:5984/movies_a", {
 const elements = {
   onlineStatus: document.getElementById("onlineStatus"),
   syncStatus: document.getElementById("syncStatus"),
+  remoteStatus: document.getElementById("remoteStatus"),
+  remoteChecked: document.getElementById("remoteChecked"),
+  checkRemoteButton: document.getElementById("checkRemoteButton"),
   error: document.getElementById("error"),
   form: document.getElementById("movieForm"),
   formHeading: document.getElementById("formHeading"),
@@ -27,6 +30,8 @@ const elements = {
 
 let editingId = null;
 let refreshNumber = 0;
+let remoteCheckInProgress = false;
+let lastRemoteState = "checking";
 
 function addLog(message) {
   const item = document.createElement("li");
@@ -52,6 +57,38 @@ function clearError() {
 function setSyncStatus(status, detail) {
   elements.syncStatus.textContent = detail ? `${status}: ${detail}` : status;
   elements.syncStatus.className = `status status-${status}`;
+}
+
+async function checkCouchDBConnection() {
+  if (remoteCheckInProgress) return;
+  remoteCheckInProgress = true;
+  elements.checkRemoteButton.disabled = true;
+  elements.remoteStatus.textContent = "Checking...";
+  elements.remoteStatus.className = "status";
+  elements.remoteChecked.textContent = "Checking now";
+
+  try {
+    await remoteDB.info();
+    elements.remoteStatus.textContent = "Connected";
+    elements.remoteStatus.className = "status status-online";
+    elements.remoteChecked.textContent = `Last checked ${new Date().toLocaleTimeString()}`;
+    elements.remoteChecked.className = "status-label";
+    if (lastRemoteState !== "connected") addLog("CouchDB connection confirmed.");
+    lastRemoteState = "connected";
+  } catch (error) {
+    const detail = error && error.message ? error.message : String(error);
+    elements.remoteStatus.textContent = "Unavailable";
+    elements.remoteStatus.className = "status status-error";
+    elements.remoteChecked.textContent = `Last checked ${new Date().toLocaleTimeString()}: ${detail}`;
+    elements.remoteChecked.className = "status-label status-detail";
+    if (lastRemoteState !== "unavailable") {
+      addLog(`CouchDB connection unavailable: ${detail}`);
+    }
+    lastRemoteState = "unavailable";
+  } finally {
+    elements.checkRemoteButton.disabled = false;
+    remoteCheckInProgress = false;
+  }
 }
 
 function splitValues(value) {
@@ -255,8 +292,13 @@ elements.closeConflictButton.addEventListener("click", () => {
 });
 window.addEventListener("online", updateOnlineStatus);
 window.addEventListener("offline", updateOnlineStatus);
+window.addEventListener("online", checkCouchDBConnection);
+window.addEventListener("offline", checkCouchDBConnection);
+elements.checkRemoteButton.addEventListener("click", checkCouchDBConnection);
 
 updateOnlineStatus();
+checkCouchDBConnection();
+window.setInterval(checkCouchDBConnection, 10000);
 refreshMovies();
 
 // Keep the visible list in step with local writes and replicated changes.

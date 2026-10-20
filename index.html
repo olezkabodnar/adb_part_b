@@ -32,6 +32,11 @@
     .intro { margin-bottom: 0; color: var(--muted); }
     .status-bar { display: flex; flex-wrap: wrap; gap: 10px; }
     .status-card { display: flex; align-items: center; gap: 9px; min-width: 142px; padding: 10px 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 3px 12px #182b4510; }
+    .remote-status-card { display: grid; grid-template-columns: auto auto; gap: 2px 9px; }
+    .remote-status-card #remoteStatus { grid-column: 2; }
+    .remote-status-card #remoteChecked { grid-column: 1 / -1; }
+    .remote-status-card button { grid-column: 1 / -1; min-height: 30px; margin-top: 5px; padding: 4px 8px; font-size: 12px; }
+    .status-detail { max-width: 260px; color: #a83232 !important; overflow-wrap: anywhere; }
     .status-label { color: var(--muted); font-size: 12px; font-weight: 650; }
     .status { display: inline-flex; align-items: center; gap: 6px; color: #49566a; font-size: 13px; font-weight: 750; text-transform: capitalize; }
     .status::before { width: 8px; height: 8px; background: #98a3b3; border-radius: 50%; content: ""; }
@@ -108,6 +113,12 @@
         <div class="status-card">
           <span class="status-label">Sync</span>
           <span id="syncStatus" class="status">Starting...</span>
+        </div>
+        <div class="status-card remote-status-card">
+          <span class="status-label">CouchDB</span>
+          <span id="remoteStatus" class="status">Checking...</span>
+          <span id="remoteChecked" class="status-label">Not checked yet</span>
+          <button id="checkRemoteButton" type="button">Check connection</button>
         </div>
       </section>
     </header>
