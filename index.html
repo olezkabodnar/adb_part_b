@@ -5,65 +5,166 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Offline-first Movies</title>
   <style>
-    body { max-width: 900px; margin: 2rem auto; padding: 0 1rem; font: 16px/1.5 system-ui, sans-serif; color: #222; }
-    form, .panel { margin: 1rem 0; padding: 1rem; border: 1px solid #ccc; border-radius: 6px; }
-    label { display: block; margin: .6rem 0; }
-    input { box-sizing: border-box; max-width: 100%; padding: .4rem; }
-    input[type="text"] { width: 30rem; }
-    button { margin: .2rem; padding: .4rem .7rem; cursor: pointer; }
-    .movie { padding: .8rem 0; border-bottom: 1px solid #ddd; }
-    .muted { color: #555; }
-    #error { color: #8b0000; white-space: pre-wrap; }
-    #log { max-height: 12rem; overflow: auto; padding-left: 1.5rem; }
-    #conflictVersions article { padding: .6rem; margin: .5rem 0; border: 1px solid #ddd; }
-    .status { font-weight: 600; }
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #202a35;
+      background: #f3f6fa;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --ink: #202a35;
+      --muted: #667386;
+      --line: #e1e7ef;
+      --blue: #2458d3;
+      --blue-dark: #1d46ad;
+      --surface: #fff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; font-size: 15px; line-height: 1.55; }
+    button, input { font: inherit; }
+    .app-shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 38px 0 56px; }
+    .masthead { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+    .eyebrow { margin: 0 0 8px; color: var(--blue); font-size: 12px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 6px; color: var(--ink); font-size: clamp(30px, 5vw, 42px); letter-spacing: -.045em; line-height: 1.12; }
+    h2 { margin-bottom: 4px; font-size: 20px; letter-spacing: -.025em; }
+    h3 { margin-bottom: 10px; font-size: 18px; letter-spacing: -.02em; }
+    .intro { margin-bottom: 0; color: var(--muted); }
+    .status-bar { display: flex; flex-wrap: wrap; gap: 10px; }
+    .status-card { display: flex; align-items: center; gap: 9px; min-width: 142px; padding: 10px 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 3px 12px #182b4510; }
+    .status-label { color: var(--muted); font-size: 12px; font-weight: 650; }
+    .status { display: inline-flex; align-items: center; gap: 6px; color: #49566a; font-size: 13px; font-weight: 750; text-transform: capitalize; }
+    .status::before { width: 8px; height: 8px; background: #98a3b3; border-radius: 50%; content: ""; }
+    .status-online, .status-active { color: #197447; }
+    .status-online::before, .status-active::before { background: #28a66b; }
+    .status-offline, .status-error { color: #b83232; }
+    .status-offline::before, .status-error::before { background: #d84d4d; }
+    .status-paused { color: #59677b; }
+    .status-change { color: var(--blue); }
+    .status-change::before { background: #4580f4; }
+    .content-grid { display: grid; grid-template-columns: minmax(260px, .82fr) minmax(0, 1.6fr); align-items: start; gap: 20px; }
+    .card { min-width: 0; padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 5px 20px #182b450a; }
+    #movieForm { margin: 0; }
+    .section-heading { margin-bottom: 18px; }
+    .section-heading p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    label { display: block; margin: 15px 0 0; color: #3d4a5c; font-size: 13px; font-weight: 700; }
+    input { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; color: var(--ink); background: #fff; border: 1px solid #cfd8e4; border-radius: 9px; outline: none; transition: border-color .15s, box-shadow .15s; }
+    input::placeholder { color: #9aa5b5; }
+    input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #2458d31c; }
+    button { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; margin: 0; padding: 8px 12px; color: #334155; background: #fff; border: 1px solid #d5deea; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+    button:hover { background: #f4f7fb; border-color: #aab9cc; }
+    button:active { transform: translateY(1px); }
+    button:focus-visible { outline: 3px solid #2458d34a; outline-offset: 2px; }
+    #saveButton { margin-top: 20px; padding-right: 16px; padding-left: 16px; color: #fff; background: var(--blue); border-color: var(--blue); }
+    #saveButton:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+    #cancelEditButton { margin: 20px 0 0 6px; }
+    .search-label { margin: 0; }
+    .result-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 8px; }
+    #resultCount { margin: 0; color: var(--muted); font-size: 12px; }
+    #movieList { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; }
+    .movie { min-width: 0; padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 12px; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .movie:hover { border-color: #b7c9e8; box-shadow: 0 7px 18px #182b4510; transform: translateY(-1px); }
+    .movie p { margin-bottom: 7px; color: #566477; font-size: 13px; overflow-wrap: anywhere; }
+    .movie button { min-height: 32px; margin: 8px 6px 0 0; padding: 5px 9px; font-size: 12px; }
+    .movie .status { display: flex; margin: 8px 0 0; color: #a44f10; font-size: 12px; text-transform: none; }
+    .movie .status::before { background: #e89a38; }
+    .muted, #movieList > .muted { color: var(--muted); }
+    #error { margin: 18px 0; padding: 12px 15px; color: #8b2424; background: #fff0f0; border: 1px solid #f0caca; border-radius: 10px; white-space: pre-wrap; }
+    #conflictPanel { margin-top: 20px; }
+    #conflictVersions article { margin: 12px 0; padding: 15px; background: #fff; border: 1px solid var(--line); border-radius: 11px; }
+    #conflictVersions article p { margin-bottom: 6px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+    #conflictVersions button { margin-top: 7px; color: #fff; background: var(--blue); border-color: var(--blue); }
+    .activity-card { margin-top: 20px; }
+    #log { display: grid; gap: 8px; max-height: 220px; margin: 14px 0 0; padding: 0 4px 0 22px; overflow: auto; color: #536174; font-size: 12px; }
+    #log li { padding-left: 4px; }
+    #log li::marker { color: #8da6d8; }
+    [hidden] { display: none !important; }
+    @media (max-width: 760px) {
+      .app-shell { width: min(100% - 28px, 560px); padding-top: 26px; }
+      .masthead { align-items: flex-start; flex-direction: column; gap: 17px; }
+      .content-grid { grid-template-columns: 1fr; }
+      .status-bar { width: 100%; }
+      .status-card { flex: 1; }
+      .card { padding: 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
 <body>
-  <h1>Offline-first Movies</h1>
+  <main class="app-shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Local library · Schema A</p>
+        <h1>Movie collection</h1>
+        <p class="intro">Manage your movies online or offline. Changes sync automatically.</p>
+      </div>
+      <section class="status-bar" aria-label="Connection and synchronisation status">
+        <div class="status-card">
+          <span class="status-label">Browser</span>
+          <span id="onlineStatus" class="status status-online">Online</span>
+        </div>
+        <div class="status-card">
+          <span class="status-label">Sync</span>
+          <span id="syncStatus" class="status">Starting...</span>
+        </div>
+      </section>
+    </header>
 
-  <section class="panel" aria-label="Connection and synchronisation status">
-    <p>Browser: <span id="onlineStatus" class="status">Checking...</span></p>
-    <p>Sync: <span id="syncStatus" class="status">Starting…</span></p>
-  </section>
+    <p id="error" role="alert" hidden></p>
 
-  <p id="error" role="alert" hidden></p>
+    <div class="content-grid">
+      <form id="movieForm" class="card">
+        <div class="section-heading">
+          <h2 id="formHeading">Add a movie</h2>
+          <p>Movie details are saved on this device first.</p>
+        </div>
+        <label>Title
+          <input id="title" type="text" required maxlength="300" placeholder="e.g. The Grand Budapest Hotel">
+        </label>
+        <label>Actors <span class="muted">(comma separated)</span>
+          <input id="actors" type="text" placeholder="Actor One, Actor Two">
+        </label>
+        <label>Genres <span class="muted">(comma separated)</span>
+          <input id="genres" type="text" placeholder="Drama, Comedy">
+        </label>
+        <button id="saveButton" type="submit">Add movie</button>
+        <button id="cancelEditButton" type="button" hidden>Cancel edit</button>
+      </form>
 
-  <form id="movieForm">
-    <h2 id="formHeading">Add a movie</h2>
-    <label>Title
-      <input id="title" type="text" required maxlength="300">
-    </label>
-    <label>Actors (comma separated)
-      <input id="actors" type="text" placeholder="Actor One, Actor Two">
-    </label>
-    <label>Genres (comma separated)
-      <input id="genres" type="text" placeholder="Drama, Comedy">
-    </label>
-    <button id="saveButton" type="submit">Add movie</button>
-    <button id="cancelEditButton" type="button" hidden>Cancel edit</button>
-  </form>
+      <section class="card">
+        <div class="section-heading">
+          <h2>Your movies</h2>
+          <p>Search titles and manage your local collection.</p>
+        </div>
+        <label class="search-label">Search by title
+          <input id="search" type="search" placeholder="Type a movie title...">
+        </label>
+        <div class="result-row">
+          <p id="resultCount" class="muted"></p>
+        </div>
+        <div id="movieList" aria-live="polite"></div>
+      </section>
+    </div>
 
-  <section>
-    <h2>Movies</h2>
-    <label>Search by title
-      <input id="search" type="search" placeholder="Search titles">
-    </label>
-    <p id="resultCount" class="muted"></p>
-    <div id="movieList" aria-live="polite"></div>
-  </section>
+    <section id="conflictPanel" class="card" hidden>
+      <div class="section-heading">
+        <h2>Conflict versions</h2>
+        <p>Compare the copies and choose which version to keep.</p>
+      </div>
+      <div id="conflictVersions"></div>
+      <button id="closeConflictButton" type="button">Close</button>
+    </section>
 
-  <section id="conflictPanel" class="panel" hidden>
-    <h2>Conflict versions</h2>
-    <p>Choose the version to keep. The other revisions will be deleted.</p>
-    <div id="conflictVersions"></div>
-    <button id="closeConflictButton" type="button">Close</button>
-  </section>
-
-  <section class="panel">
-    <h2>Activity log</h2>
-    <ol id="log" aria-live="polite"></ol>
-  </section>
+    <section class="card activity-card">
+      <div class="section-heading">
+        <h2>Activity</h2>
+        <p>Recent connection and sync events.</p>
+      </div>
+      <ol id="log" aria-live="polite"></ol>
+    </section>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@9.0.0/dist/pouchdb.min.js"></script>
   <script src="script.js"></script>

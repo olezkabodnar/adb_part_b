@@ -51,6 +51,7 @@ function clearError() {
 
 function setSyncStatus(status, detail) {
   elements.syncStatus.textContent = detail ? `${status}: ${detail}` : status;
+  elements.syncStatus.className = `status status-${status}`;
 }
 
 function splitValues(value) {
@@ -242,6 +243,7 @@ async function resolveConflict(id, chosenRevision) {
 function updateOnlineStatus() {
   const online = navigator.onLine;
   elements.onlineStatus.textContent = online ? "Online" : "Offline";
+  elements.onlineStatus.className = `status status-${online ? "online" : "offline"}`;
   addLog(`Browser is ${online ? "online" : "offline"}.`);
 }
 
