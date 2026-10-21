@@ -48,6 +48,7 @@
     .status-change { color: var(--blue); }
     .status-change::before { background: #4580f4; }
     .content-grid { display: grid; grid-template-columns: minmax(260px, .82fr) minmax(0, 1.6fr); align-items: start; gap: 20px; }
+    .editor-column { display: grid; gap: 20px; }
     .card { min-width: 0; padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 5px 20px #182b450a; }
     #movieForm { margin: 0; }
     .section-heading { margin-bottom: 18px; }
@@ -79,7 +80,7 @@
     #conflictVersions article { margin: 12px 0; padding: 15px; background: #fff; border: 1px solid var(--line); border-radius: 11px; }
     #conflictVersions article p { margin-bottom: 6px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
     #conflictVersions button { margin-top: 7px; color: #fff; background: var(--blue); border-color: var(--blue); }
-    .activity-card { margin-top: 20px; }
+    .activity-card { margin: 0; }
     #log { display: grid; gap: 8px; max-height: 220px; margin: 14px 0 0; padding: 0 4px 0 22px; overflow: auto; color: #536174; font-size: 12px; }
     #log li { padding-left: 4px; }
     #log li::marker { color: #8da6d8; }
@@ -126,23 +127,33 @@
     <p id="error" role="alert" hidden></p>
 
     <div class="content-grid">
-      <form id="movieForm" class="card">
-        <div class="section-heading">
-          <h2 id="formHeading">Add a movie</h2>
-          <p>Movie details are saved on this device first.</p>
-        </div>
-        <label>Title
-          <input id="title" type="text" required maxlength="300" placeholder="e.g. The Grand Budapest Hotel">
-        </label>
-        <label>Actors <span class="muted">(comma separated)</span>
-          <input id="actors" type="text" placeholder="Actor One, Actor Two">
-        </label>
-        <label>Genres <span class="muted">(comma separated)</span>
-          <input id="genres" type="text" placeholder="Drama, Comedy">
-        </label>
-        <button id="saveButton" type="submit">Add movie</button>
-        <button id="cancelEditButton" type="button" hidden>Cancel edit</button>
-      </form>
+      <div class="editor-column">
+        <form id="movieForm" class="card">
+          <div class="section-heading">
+            <h2 id="formHeading">Add a movie</h2>
+            <p>Movie details are saved on this device first.</p>
+          </div>
+          <label>Title
+            <input id="title" type="text" required maxlength="300" placeholder="e.g. The Grand Budapest Hotel">
+          </label>
+          <label>Actors <span class="muted">(comma separated)</span>
+            <input id="actors" type="text" placeholder="Actor One, Actor Two">
+          </label>
+          <label>Genres <span class="muted">(comma separated)</span>
+            <input id="genres" type="text" placeholder="Drama, Comedy">
+          </label>
+          <button id="saveButton" type="submit">Add movie</button>
+          <button id="cancelEditButton" type="button" hidden>Cancel edit</button>
+        </form>
+
+        <section class="card activity-card">
+          <div class="section-heading">
+            <h2>Activity</h2>
+            <p>Recent connection and sync events.</p>
+          </div>
+          <ol id="log" aria-live="polite"></ol>
+        </section>
+      </div>
 
       <section class="card">
         <div class="section-heading">
@@ -168,13 +179,6 @@
       <button id="closeConflictButton" type="button">Close</button>
     </section>
 
-    <section class="card activity-card">
-      <div class="section-heading">
-        <h2>Activity</h2>
-        <p>Recent connection and sync events.</p>
-      </div>
-      <ol id="log" aria-live="polite"></ol>
-    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@9.0.0/dist/pouchdb.min.js"></script>
